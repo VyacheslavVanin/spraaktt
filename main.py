@@ -16,8 +16,17 @@ def record_microfone():
     recording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
     sd.wait()
     write(filename, fs, recording)
+    print("Finish Recording...")
     
     return filename
+
+
+def play_wavfile(path):
+    import sounddevice as sd
+    from scipy.io.wavfile import read
+    fs, data = read(path)
+    sd.play(data, fs)
+    sd.wait()
 
 
 class Transcriber:
@@ -51,10 +60,11 @@ class Transcriber:
         )
         return result["text"]
 
-
-stt = Transcriber()
-while True:
-    print('Start record...')
-    file_name = record_microfone()
-    print('Finish record...')
-    print(stt.transcribe_audio(file_name))
+record_microfone()
+play_wavfile("record.wav")
+# stt = Transcriber()
+# while True:
+#     print('Start record...')
+#     file_name = record_microfone()
+#     print('Finish record...')
+#     print(stt.transcribe_audio(file_name))
