@@ -2,6 +2,24 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
 
+def record_microfone():
+    '''
+    Read audio from default system microfone and write it to record.wav file.
+    returns recorded file name
+    '''
+    import sounddevice as sd
+    from scipy.io.wavfile import write
+    fs = 16000
+    seconds = 5
+    filename = "record.wav"
+    print("Recording...")
+    recording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
+    sd.wait()
+    write(filename, fs, recording)
+    
+    return filename
+
+
 class Transcriber:
     def __init__(self):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -26,9 +44,17 @@ class Transcriber:
         )
 
     def transcribe_audio(self, file_name) -> str:
-        result = self._pipe(file_name, return_timestamps=True)
+        result = self._pipe(
+            file_name,
+            return_timestamps=True,
+            # generate_kwargs={"language": "russian", "task": "translate"}
+        )
         return result["text"]
 
 
 stt = Transcriber()
-print(stt.transcribe_audio(sample))
+while True:
+    print('Start record...')
+    file_name = record_microfone()
+    print('Finish record...')
+    print(stt.transcribe_audio(file_name))
