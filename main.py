@@ -115,31 +115,6 @@ class Recorder:
             print("No audio data recorded")
             return np.array([], dtype=np.float32)
 
-    def stop_record_to_file(self, filename="record.wav"):
-        """Stop recording and save the accumulated data to a file"""
-        if not self.recording_active:
-            print("Not currently recording!")
-            return None
-
-        self.recording_active = False
-
-        # Wait for the recording thread to finish
-        if self.record_thread:
-            self.record_thread.join()
-
-        # Concatenate all recorded chunks
-        if self.recording:
-            full_recording = np.concatenate(self.recording, axis=0)
-
-            # Write to WAV file
-            from scipy.io.wavfile import write
-            write(filename, self.sample_rate, full_recording)
-            print(f"Recording saved to {filename}")
-            return filename
-        else:
-            print("No audio data recorded")
-            return None
-
 
 def main():
     from pynput import keyboard
@@ -166,12 +141,12 @@ def main():
         if key == keyboard.Key.page_down and recorder.recording_active:
             print("\nStopped recording. Processing transcription...")
 
-            # Stop recording and get the filename
-            file_name = recorder.stop_record_to_np_buffer()
+            # Stop recording and save to a temporary file for transcription
+            data = recorder.stop_record_to_np_buffer()
 
-            if file_name.any():
+            if data.any():
                 print("\nTranscribing...")
-                transcription = stt.transcribe_audio(file_name)
+                transcription = stt.transcribe_audio(data)
                 print(f"\nTranscription: {transcription}")
                 print("\nPress and hold 'PageDown' to record again.")
 
