@@ -10,6 +10,7 @@ import numpy as np
 def play_wavfile(path):
     import sounddevice as sd
     from scipy.io.wavfile import read
+
     fs, data = read(path)
     sd.play(data, fs)
     sd.wait()
@@ -23,7 +24,10 @@ class Transcriber:
         model_id = "openai/whisper-large-v3"
 
         model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+            model_id,
+            torch_dtype=torch_dtype,
+            low_cpu_mem_usage=True,
+            use_safetensors=True,
         )
         model.to(device)
 
@@ -38,7 +42,9 @@ class Transcriber:
             device=device,
         )
 
-    def transcribe_audio(self, data : str|np.ndarray, language_hint=None, translate=False) -> str:
+    def transcribe_audio(
+        self, data: str | np.ndarray, language_hint=None, translate=False
+    ) -> str:
         options = {}
         if language_hint:
             options.update({"language": language_hint})
@@ -53,11 +59,22 @@ class Transcriber:
         return result["text"]
 
 
+class RecorderAlreadyRunning(Exception):
+    def __init__(self, message="Recorder is already running"):
+        super().__init__(message)
+
+
+class RecorderIsNotRunning(Exception):
+    def __init__(self, message="Recorder is not running"):
+        super().__init__(message)
+
+
 class Recorder:
-    '''
+    """
     Class contains methods start_record() and stop_record(). On start_record starts thread that accumulate data from input.
     On stop_record() should stop thread and return accumulated data
-    '''
+    """
+
     def __init__(self, sample_rate=16000):
         self.sample_rate = sample_rate
         self.recording = []
@@ -67,8 +84,7 @@ class Recorder:
     def start_record(self):
         """Start recording audio in a separate thread"""
         if self.recording_active:
-            print("Already recording!")
-            return
+            raise RecorderAlreadyRunning()
 
         self.recording = []
         self.recording_active = True
@@ -80,10 +96,12 @@ class Recorder:
                     self.recording.append(indata.copy())
 
             # Start the audio stream
-            with sd.InputStream(samplerate=self.sample_rate,
-                              channels=1,
-                              dtype='int16',
-                              callback=audio_callback):
+            with sd.InputStream(
+                samplerate=self.sample_rate,
+                channels=1,
+                dtype="int16",
+                callback=audio_callback,
+            ):
                 while self.recording_active:
                     time.sleep(0.1)  # Small sleep to prevent busy waiting
 
@@ -93,12 +111,11 @@ class Recorder:
         self.record_thread.start()
 
     def stop_record_to_np_buffer(self):
-        '''
+        """
         Stop recording and return accumulated data as (`np.ndarray` of shape (n, ) of type `np.float32` or `np.float64`).
-        '''
+        """
         if not self.recording_active:
-            print("Not currently recording!")
-            return np.array([], dtype=np.float32)
+            raise RecorderIsNotRunning()
 
         self.recording_active = False
 
@@ -113,58 +130,83 @@ class Recorder:
             # Convert to float32 and normalize if needed
             if full_recording.dtype == np.int16:
                 full_recording = full_recording.astype(np.float32) / 32768.0
-            elif full_recording.dtype != np.float32 and full_recording.dtype != np.float64:
+            elif (
+                full_recording.dtype != np.float32
+                and full_recording.dtype != np.float64
+            ):
                 full_recording = full_recording.astype(np.float32)
 
             return full_recording.flatten()
         else:
-            print("No audio data recorded")
             return np.array([], dtype=np.float32)
 
 
+class SpeachRecognizer:
+    """
+    Class contains methods listen() and transcribe().
+    On listen starts listen and on transcribe() returns transcribed text.
+    """
+
+    def __init__(self, sample_rate=16000, language_hint=None, translate=False):
+        self.recorder = Recorder(sample_rate=sample_rate)
+        self.transcriber = Transcriber()
+        self.language_hint = language_hint
+        self.translate = translate
+        self.last_recording = None
+
+    def listen(self):
+        self.recorder.start_record()
+
+    def stop_listening(self):
+        return self.recorder.stop_record_to_np_buffer()
+
+    def stop_listening_and_transcribe(self):
+        self.last_recording = self.recorder.stop_record_to_np_buffer()
+        if self.last_recording is None or not self.last_recording.any():
+            return ""
+
+        transcription = self.transcriber.transcribe_audio(
+            self.last_recording,
+            language_hint=self.language_hint,
+            translate=self.translate,
+        )
+        return transcription
+
+
 def main():
-    from pynput import keyboard
+    speech_recognizer = SpeachRecognizer()
 
-    # Initialize the recorder
-    recorder = Recorder()
-    stt = Transcriber()
+    def start_listen():
+        speech_recognizer.listen()
 
-    print("Press and hold 'PageDown' to record audio. Release to transcribe.")
-    print("Press 'Esc' to exit the program.")
+    def stop_listen():
+        text = speech_recognizer.stop_listening_and_transcribe()
+        print(text)
 
-    def on_press(key):
+    def stop_and_quit():
         try:
-            if key == keyboard.Key.page_down and not recorder.recording_active:
-                print("\nStarted recording... Release PageDown to transcribe.")
+            speech_recognizer.stop_listening()
+        finally:
+            exit()
 
-                # Start recording
-                recorder.start_record()
-        except AttributeError:
-            # Special keys (like PageDown) are handled differently
-            pass
+    commands = {
+        "start": start_listen,
+        "stop": stop_listen,
+        "quit": stop_and_quit,
+        "exit": stop_and_quit,
+    }
 
-    def on_release(key):
-        if key == keyboard.Key.page_down and recorder.recording_active:
-            print("\nStopped recording. Processing transcription...")
-
-            # Stop recording and save to a temporary file for transcription
-            data = recorder.stop_record_to_np_buffer()
-
-            if data.any():
-                print("\nTranscribing...")
-                transcription = stt.transcribe_audio(data)
-                print(f"\nTranscription: {transcription}")
-                print("\nPress and hold 'PageDown' to record again.")
-
-        if key == keyboard.Key.esc:
-            print("Exiting...")
-            if recorder.recording_active:
-                recorder.stop_record_to_file()  # Stop any ongoing recording
-            return False  # Stop listener
-
-    # Start the keyboard listener
-    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-        listener.join()
+    print("Enter command (start/stop/quit):")
+    while True:
+        try:
+            user_input = input()
+            command = commands.get(user_input)
+            if command is not None:
+                command()
+        except KeyboardInterrupt:
+            quit()
+        except Exception as e:
+            print(f"Error: {e}")
 
 
 if __name__ == "__main__":
