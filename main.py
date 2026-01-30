@@ -38,11 +38,17 @@ class Transcriber:
             device=device,
         )
 
-    def transcribe_audio(self, file_name) -> str:
+    def transcribe_audio(self, data : str|np.ndarray, language_hint=None, translate=False) -> str:
+        options = {}
+        if language_hint:
+            options.update({"language": language_hint})
+        if translate:
+            options.update({"task": "translate"})
+
         result = self._pipe(
-            file_name,
+            data,
             return_timestamps=True,
-            # generate_kwargs={"language": "russian", "task": "translate"}
+            generate_kwargs=options,
         )
         return result["text"]
 
