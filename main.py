@@ -60,11 +60,10 @@ class Transcriber:
         )
         return result["text"]
 
-record_microfone()
-play_wavfile("record.wav")
-# stt = Transcriber()
-# while True:
-#     print('Start record...')
-#     file_name = record_microfone()
-#     print('Finish record...')
-#     print(stt.transcribe_audio(file_name))
+
+stt = Transcriber()
+while True:
+    print('Start record...')
+    file_name = record_microfone()
+    print('Finish record...')
+    print(stt.transcribe_audio(file_name))
