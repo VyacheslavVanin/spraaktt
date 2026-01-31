@@ -3,17 +3,8 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import threading
 import time
 import sounddevice as sd
-from scipy.io.wavfile import write
 import numpy as np
-
-
-def play_wavfile(path):
-    import sounddevice as sd
-    from scipy.io.wavfile import read
-
-    fs, data = read(path)
-    sd.play(data, fs)
-    sd.wait()
+import sys
 
 
 class Transcriber:
@@ -196,7 +187,7 @@ def main():
         "exit": stop_and_quit,
     }
 
-    print("Enter command (start/stop/quit):")
+    print("Server started...\nEnter command (start/stop/quit):", file=sys.stderr)
     while True:
         try:
             user_input = input()
