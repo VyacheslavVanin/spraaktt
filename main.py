@@ -42,23 +42,27 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def main():
-    args = parse_arguments()
-
-    # Redirect stdout and stderr if file paths are provided
-    if args.stdout_file:
+def redirect_std_outputs(stdout_file, stderr_file):
+    """ Redirect stdout and stderr if file paths are provided. """
+    if stdout_file:
         stdout_fd = os.open(
             args.stdout_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
         )
         os.dup2(stdout_fd, sys.stdout.fileno())
         os.close(stdout_fd)
 
-    if args.stderr_file:
+    if stderr_file:
         stderr_fd = os.open(
             args.stderr_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
         )
         os.dup2(stderr_fd, sys.stderr.fileno())
         os.close(stderr_fd)
+
+
+def main():
+    args = parse_arguments()
+
+    redirect_std_outputs(args.stdout_file, args.stderr_file)
 
     speech_recognizer = SpeachRecognizer(
         language_hint=args.language,
