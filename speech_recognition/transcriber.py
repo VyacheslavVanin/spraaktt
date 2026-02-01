@@ -31,7 +31,7 @@ class Transcriber:
 
     def transcribe_audio(
         self, data: str | np.ndarray, language_hint=None, translate=False
-    ) -> str:
+    ) -> dict():
         options = {}
         if language_hint:
             options.update({"language": language_hint})
@@ -43,4 +43,15 @@ class Transcriber:
             return_timestamps=True,
             generate_kwargs=options,
         )
-        return result["text"]
+        # Example of result:
+        # ```
+        # {'chunks': [{'text': 'First chunk text. ',
+        #              'timestamp': (0.0, 7.52)},
+        #             {'text': ' Second chunk text. ',
+        #              'timestamp': (7.52, 17.7)},
+        #             {'text': ' Other text ',
+        #              'timestamp': (17.7, 26.88)}],
+        #  'text': ' First chunk text. Second chunk text. Other text '
+        # }
+        # ```
+        return result

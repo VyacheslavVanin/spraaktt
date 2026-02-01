@@ -38,23 +38,31 @@ def parse_arguments():
     parser.add_argument(
         "--stderr-file", type=str, help="File path to redirect stderr messages"
     )
+    parser.add_argument(
+        "--blocksize",
+        type=int,
+        default=256,
+        help="Block size for audio recording (default: 256)",
+    )
+    parser.add_argument(
+        "--blocks-to-process",
+        type=int,
+        default=1000,
+        help="Number of blocks to process at once (default: 1000)",
+    )
 
     return parser.parse_args()
 
 
 def redirect_std_outputs(stdout_file, stderr_file):
-    """ Redirect stdout and stderr if file paths are provided. """
+    """Redirect stdout and stderr if file paths are provided."""
     if stdout_file:
-        stdout_fd = os.open(
-            args.stdout_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
-        )
+        stdout_fd = os.open(stdout_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
         os.dup2(stdout_fd, sys.stdout.fileno())
         os.close(stdout_fd)
 
     if stderr_file:
-        stderr_fd = os.open(
-            args.stderr_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
-        )
+        stderr_fd = os.open(stderr_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
         os.dup2(stderr_fd, sys.stderr.fileno())
         os.close(stderr_fd)
 
@@ -70,6 +78,8 @@ def main():
         enhance_text=args.enhance,
         enhancer_model=args.enhancer_model,
         enhancer_base_url=args.enhancer_url,
+        blocksize=args.blocksize,
+        blocks_to_process=args.blocks_to_process,
     )
 
     def start_listen():
@@ -82,17 +92,35 @@ def main():
     def stop_and_quit():
         try:
             speech_recognizer.stop_listening()
+            speech_recognizer.stop_continuous()
         finally:
             exit()
+
+    def start_continuous_listen():
+        def cb(text):
+            print(text)
+
+        speech_recognizer.listen_and_continuously_transcribe(cb)
+
+    def stop_continuous():
+        try:
+            speech_recognizer.stop_continuous()
+        finally:
+            pass
 
     commands = {
         "start": start_listen,
         "stop": stop_listen,
         "quit": stop_and_quit,
         "exit": stop_and_quit,
+        "startc": start_continuous_listen,
+        "stopc": stop_continuous,
     }
 
-    print("Server started...\nEnter command (start/stop/quit):", file=sys.stderr)
+    print(
+        "Server started...\nEnter command (start/stop/startc/stopc/quit):",
+        file=sys.stderr,
+    )
     while True:
         try:
             user_input = input()
