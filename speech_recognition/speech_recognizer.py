@@ -1,6 +1,5 @@
 from .recorder import Recorder
 from .transcriber import Transcriber
-from .text_enhancer import TextEnhancer
 
 
 class SpeachRecognizer:
@@ -14,9 +13,6 @@ class SpeachRecognizer:
         sample_rate=16000,
         language_hint=None,
         translate=False,
-        enhance_text=False,
-        enhancer_model="gpt-3.5-turbo",
-        enhancer_base_url=None,
         blocksize=256,
         blocks_to_process=1000,
     ):
@@ -28,14 +24,8 @@ class SpeachRecognizer:
         self.transcriber = Transcriber()
         self.language_hint = language_hint
         self.translate = translate
-        self.enhance_text = enhance_text
-        self.enhancer_base_url = enhancer_base_url
         self.last_recording = None
 
-        if enhance_text:
-            self.text_enhancer = TextEnhancer(
-                model_name=enhancer_model, base_url=enhancer_base_url
-            )
 
     def listen(self):
         self.recorder.start_record()
@@ -54,10 +44,6 @@ class SpeachRecognizer:
             translate=self.translate,
         )["text"]
 
-        if self.enhance_text:
-            print(f"raw result: {transcription}")
-            transcription = self.text_enhancer.enhance(transcription)
-
         return transcription
 
     def listen_and_continuously_transcribe(self, user_callback):
@@ -74,10 +60,6 @@ class SpeachRecognizer:
                 language_hint=self.language_hint,
                 translate=self.translate,
             )["text"]
-
-            if self.enhance_text:
-                print(f"raw result: {transcription}")
-                transcription = self.text_enhancer.enhance(transcription)
 
             user_callback(transcription)
 

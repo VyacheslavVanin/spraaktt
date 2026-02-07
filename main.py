@@ -19,20 +19,6 @@ def parse_arguments():
         "--translate", "-t", action="store_true", help="Enable translation to English"
     )
     parser.add_argument(
-        "--enhance", "-e", action="store_true", help="Enable text enhancement using LLM"
-    )
-    parser.add_argument(
-        "--enhancer-model",
-        type=str,
-        default="gpt-3.5-turbo",
-        help="Model name for text enhancement (default: gpt-3.5-turbo)",
-    )
-    parser.add_argument(
-        "--enhancer-url",
-        type=str,
-        help="Base URL for the text enhancement service (optional)",
-    )
-    parser.add_argument(
         "--stdout-file", type=str, help="File path to redirect stdout messages"
     )
     parser.add_argument(
@@ -75,9 +61,6 @@ def main():
     speech_recognizer = SpeachRecognizer(
         language_hint=args.language,
         translate=args.translate,
-        enhance_text=args.enhance,
-        enhancer_model=args.enhancer_model,
-        enhancer_base_url=args.enhancer_url,
         blocksize=args.blocksize,
         blocks_to_process=args.blocks_to_process,
     )

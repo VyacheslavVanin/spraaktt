@@ -10,7 +10,8 @@ class TextEnhancer:
         - explain that this is a text retrieved from speach recognition
         - text need to be fixed if some words are do not match context
         - remove parasite/filler words
-        - remove unnecesary repetiotions in speach for example when person tries to refrase just said sentence
+        - remove unnecesary repetitions in speach for example when person tries to refrase the sentence they just said
+        - improve overall readability and flow
     """
 
     def __init__(self, model_name="gpt-3.5-turbo", api_key=None, base_url=None):
@@ -62,8 +63,9 @@ Please:
 2. Remove filler words like 'um', 'uh', 'like', 'you know', etc.
 3. Remove unnecessary repetitions where someone tries to rephrase a sentence
 4. Maintain the original meaning while making the text more readable and coherent
-5. Reply only with improved text
-6. Preserve original language
+5. Preserve original language
+6. Improve readability and flow
+7. Reply only with improved text
 
 Text to improve:
 {text}"""
