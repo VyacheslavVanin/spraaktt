@@ -42,7 +42,7 @@ The project relies on the following key packages:
 Run the application with the following command:
 
 ```bash
-uv python main.py [options]
+uv run main.py [options]
 ```
 
 ### Options
@@ -64,11 +64,11 @@ Once the application is running, you can use the following commands:
 
 ```bash
 # Basic usage with Norwegian language
-python main.py --language no
+uv run main.py --language no
 
 # Translate speech to English
-python main.py --language de --translate
+uv run main.py --language de --translate
 
 # Redirect output to files
-python main.py --language en --stdout-file output.txt --stderr-file errors.txt
+uv run main.py --language en --stdout-file output.txt --stderr-file errors.txt
 ```
