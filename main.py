@@ -100,10 +100,6 @@ def main():
         "stopc": stop_continuous,
     }
 
-    print(
-        "Server started...\nEnter command (start/stop/startc/stopc/quit):",
-        file=sys.stderr,
-    )
     while True:
         try:
             user_input = input()
