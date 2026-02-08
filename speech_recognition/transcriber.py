@@ -1,6 +1,7 @@
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import numpy as np
+import sys
 import threading
 import time
 
@@ -15,9 +16,6 @@ class Transcriber:
         self.idle_unload_time = idle_unload_time
         self._last_activity_time = time.time()
         self._idle_timer = None
-
-        # Load the model initially
-        self.load_model()
 
         # Start idle monitoring if enabled
         if self.idle_unload_time is not None and self.idle_unload_time > 0:
@@ -37,7 +35,7 @@ class Transcriber:
         # Check if we're still idle (no activity since the timer started)
         time_since_last_activity = time.time() - self._last_activity_time
         if time_since_last_activity >= self.idle_unload_time:
-            print(f"Unloading model due to {self.idle_unload_time}s of inactivity...")
+            print(f"Unloading model due to {self.idle_unload_time}s of inactivity...", file=sys.stderr)
             self.unload_model()
 
     def _reset_idle_timer(self):
