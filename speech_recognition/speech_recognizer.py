@@ -15,17 +15,17 @@ class SpeachRecognizer:
         translate=False,
         blocksize=256,
         blocks_to_process=1000,
+        idle_unload_time=None,
     ):
         self.recorder = Recorder(
             sample_rate=sample_rate,
             blocksize=blocksize,
             blocks_to_process=blocks_to_process,
         )
-        self.transcriber = Transcriber()
+        self.transcriber = Transcriber(idle_unload_time=idle_unload_time)
         self.language_hint = language_hint
         self.translate = translate
         self.last_recording = None
-
 
     def listen(self):
         self.recorder.start_record()

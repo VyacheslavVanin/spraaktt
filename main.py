@@ -36,6 +36,12 @@ def parse_arguments():
         default=1000,
         help="Number of blocks to process at once (default: 1000)",
     )
+    parser.add_argument(
+        "--idle-unload-time",
+        type=float,
+        default=None,
+        help="Time in seconds after which to automatically unload model when idle (default: disabled)",
+    )
 
     return parser.parse_args()
 
@@ -63,6 +69,7 @@ def main():
         translate=args.translate,
         blocksize=args.blocksize,
         blocks_to_process=args.blocks_to_process,
+        idle_unload_time=args.idle_unload_time,
     )
 
     def start_listen():
@@ -91,6 +98,16 @@ def main():
         finally:
             pass
 
+    def unload_model():
+        """Unload the transcription model from memory"""
+        speech_recognizer.transcriber.unload_model()
+        print("Model unloaded from memory", file=sys.stderr)
+
+    def load_model():
+        """Load the transcription model into memory"""
+        speech_recognizer.transcriber.load_model()
+        print("Model loaded into memory", file=sys.stderr)
+
     commands = {
         "start": start_listen,
         "stop": stop_listen,
@@ -98,6 +115,8 @@ def main():
         "exit": stop_and_quit,
         "startc": start_continuous_listen,
         "stopc": stop_continuous,
+        "unload": unload_model,
+        "load": load_model,
     }
 
     while True:
